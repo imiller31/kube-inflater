@@ -226,6 +226,41 @@ func EtcdTester() error {
 	fmt.Println("    ./bin/etcd-tester perf localhost:2379 1000 0       # Run performance test (1000 nodes, indefinite)")
 	return nil
 }
+// CrBenchmark builds and runs the custom resource benchmark tool
+func CrBenchmark() error {
+	fmt.Println("==> Building and running CR benchmark tool 📊")
+
+	// Build the CR benchmark tool
+	outDir := filepath.Join(".", "bin")
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		return err
+	}
+
+	if err := run("go", "build", "-o", filepath.Join(outDir, "cr-benchmark"), "./cmd/cr-benchmark"); err != nil {
+		return err
+	}
+
+	// Parse command line arguments after --
+	args := os.Args
+	sep := 0
+	for i, a := range args {
+		if a == "--" {
+			sep = i
+			break
+		}
+	}
+	var passArgs []string
+	if sep > 0 && sep+1 < len(args) {
+		passArgs = args[sep+1:]
+	}
+
+	// Run the CR benchmark tool
+	bin := filepath.Join(".", "bin", "cr-benchmark")
+	cmd := exec.Command(bin, passArgs...)
+	cmd.Stdout, cmd.Stderr, cmd.Stdin = os.Stdout, os.Stderr, os.Stdin
+	return cmd.Run()
+}
+
 
 // getAzureACRCredentials attempts to get ACR credentials using Azure CLI
 func getAzureACRCredentials(registryName string, username, password *string) error {
